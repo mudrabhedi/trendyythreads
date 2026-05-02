@@ -6,7 +6,7 @@ import LoginPage from "./pages/LoginPage";
 import AdminPage from "./pages/AdminPage";
 import AboutSection from "./components/AboutSection";
 import CartPage from "./pages/CartPage";
-import CheckoutPage from "./pages/CheckoutPage";
+import CheckOutPage from "./pages/CheckOutPage";
 import { Toaster } from "react-hot-toast";
 import JeansPage from "./pages/JeansPage";
 import PantsPage from "./pages/PantsPage";
@@ -48,7 +48,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<AdminPage />} />
           <Route path="/cart" element={<CartPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/checkout" element={<CheckOutPage />} />
           <Route path="/jeans" element={<JeansPage />} />
           <Route path="/pants" element={<PantsPage />} />
           <Route path="/dresses" element={<DressesPage />} />
