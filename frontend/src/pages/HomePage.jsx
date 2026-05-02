@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import ProductCard from "../components/ProductCard";
-import useWishlist from "../hooks/useWishList";
+import useWishlist from "../hooks/useWishlist";
 import toast from "react-hot-toast";
 
 const STORAGE_KEYS = ["products", "inventory", "adminProducts"];
