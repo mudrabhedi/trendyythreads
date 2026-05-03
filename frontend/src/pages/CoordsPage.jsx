@@ -98,12 +98,39 @@ export default function CoordsPage() {
     });
   }, [filteredProducts, sort]);
 
-  const handleAddToCart = (product) => {
-    const savedProducts = JSON.parse(localStorage.getItem("adminProducts")) || [];
+const handleAddToCart = (product) => {
+  const selectedStock =
+    product.sizes?.find((s) => s.size === product.size)?.stock || 0;
 
-    const latestProduct = savedProducts.find(
-      (p) => String(p.id) === String(product.id)
-    );
+  if (selectedStock <= 0) {
+    toast.error("Selected size is out of stock");
+    return;
+  }
+
+  if (product.quantity > selectedStock) {
+    toast.error(`Only ${selectedStock} item(s) available`);
+    return;
+  }
+
+  const existingCart = JSON.parse(localStorage.getItem("cart")) || [];
+
+  const existingItemIndex = existingCart.findIndex(
+    (item) =>
+      String(item._id || item.id) === String(product._id || product.id) &&
+      item.size === product.size
+  );
+
+  if (existingItemIndex !== -1) {
+    existingCart[existingItemIndex].quantity += product.quantity;
+  } else {
+    existingCart.push(product);
+  }
+
+  localStorage.setItem("cart", JSON.stringify(existingCart));
+
+  window.dispatchEvent(new Event("cartUpdated"));
+  toast.success("Added to cart");
+};
 
     const selectedStock =
       latestProduct?.sizes?.find((s) => s.size === product.size)?.stock || 0;
