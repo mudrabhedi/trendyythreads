@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { API } from "../api/api";
 
 export default function CheckoutPage() {
@@ -108,10 +107,9 @@ export default function CheckoutPage() {
         return;
       }
 
-      const { data: order } = await axios.post(
-        "http://localhost:5000/api/payment/create-order",
-        { amount: grandTotal }
-      );
+     const { data: order } = await API.post("/payment/create-order", {
+  amount: grandTotal,
+});
 
       const options = {
         key: "rzp_test_SkAzOkzr0VpjvT",
