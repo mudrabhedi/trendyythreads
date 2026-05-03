@@ -11,83 +11,144 @@ const slugify = (text) =>
     .replace(/\s+/g, "-");
 
 router.get("/", async (req, res) => {
-  const products = await Product.find().sort({ createdAt: -1 });
-  res.json(products);
+  try {
+    const products = await Product.find().sort({ createdAt: -1 });
+    res.json(products);
+  } catch (error) {
+    console.error("Load products error:", error.message);
+    res.status(500).json({ message: "Failed to load products" });
+  }
 });
 
 router.get("/category/:category", async (req, res) => {
-  const products = await Product.find({
-    category: new RegExp(`^${req.params.category}$`, "i"),
-    status: { $ne: "Hidden" },
-  }).sort({ createdAt: -1 });
+  try {
+    const products = await Product.find({
+      category: new RegExp(`^${req.params.category}$`, "i"),
+      status: { $ne: "Hidden" },
+    }).sort({ createdAt: -1 });
 
-  res.json(products);
+    res.json(products);
+  } catch (error) {
+    console.error("Load category products error:", error.message);
+    res.status(500).json({ message: "Failed to load category products" });
+  }
 });
 
 router.get("/featured/all", async (req, res) => {
-  const products = await Product.find({
-    featured: true,
-    status: { $ne: "Hidden" },
-  }).sort({ createdAt: -1 });
+  try {
+    const products = await Product.find({
+      featured: true,
+      status: { $ne: "Hidden" },
+    }).sort({ createdAt: -1 });
 
-  res.json(products);
+    res.json(products);
+  } catch (error) {
+    console.error("Load featured products error:", error.message);
+    res.status(500).json({ message: "Failed to load featured products" });
+  }
 });
 
 router.get("/:slug", async (req, res) => {
-  const products = await Product.find({ status: { $ne: "Hidden" } });
+  try {
+    const products = await Product.find({ status: { $ne: "Hidden" } });
 
-  const product = products.find(
-    (p) =>
-      slugify(p.title || p.name) === req.params.slug ||
-      String(p._id) === String(req.params.slug)
-  );
+    const product = products.find(
+      (p) =>
+        slugify(p.title || p.name) === req.params.slug ||
+        String(p._id) === String(req.params.slug)
+    );
 
-  if (!product) {
-    return res.status(404).json({ message: "Product not found" });
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.json(product);
+  } catch (error) {
+    console.error("Load single product error:", error.message);
+    res.status(500).json({ message: "Failed to load product" });
   }
-
-  res.json(product);
 });
 
 router.post("/", async (req, res) => {
-  const totalStock = req.body.sizes.reduce(
-    (sum, row) => sum + Number(row.stock || 0),
-    0
-  );
+  try {
+    const sizes = Array.isArray(req.body.sizes) ? req.body.sizes : [];
 
-  const product = await Product.create({
-    ...req.body,
-    title: req.body.name,
-    stock: totalStock,
-    status: totalStock <= 0 ? "Out of stock" : req.body.status,
-  });
+    const totalStock = sizes.reduce(
+      (sum, row) => sum + Number(row.stock || 0),
+      0
+    );
 
-  res.status(201).json(product);
+    const product = await Product.create({
+      name: req.body.name,
+      title: req.body.title || req.body.name,
+      category: req.body.category,
+      price: Number(req.body.price || 0),
+      oldPrice: Number(req.body.oldPrice || 0),
+      image: req.body.image,
+      sizes,
+      stock: totalStock,
+      featured: Boolean(req.body.featured),
+      status: totalStock <= 0 ? "Out of stock" : req.body.status || "Active",
+    });
+
+    res.status(201).json(product);
+  } catch (error) {
+    console.error("Create product error:", error.message);
+    res.status(500).json({
+      message: "Failed to create product",
+      error: error.message,
+    });
+  }
 });
 
 router.put("/:id", async (req, res) => {
-  const totalStock = req.body.sizes.reduce(
-    (sum, row) => sum + Number(row.stock || 0),
-    0
-  );
+  try {
+    const sizes = Array.isArray(req.body.sizes) ? req.body.sizes : [];
 
-  const product = await Product.findByIdAndUpdate(
-    req.params.id,
-    {
-      ...req.body,
-      title: req.body.name,
-      stock: totalStock,
-      status: totalStock <= 0 ? "Out of stock" : req.body.status,
-    },
-    { new: true }
-  );
+    const totalStock = sizes.reduce(
+      (sum, row) => sum + Number(row.stock || 0),
+      0
+    );
 
-  res.json(product);
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      {
+        name: req.body.name,
+        title: req.body.title || req.body.name,
+        category: req.body.category,
+        price: Number(req.body.price || 0),
+        oldPrice: Number(req.body.oldPrice || 0),
+        image: req.body.image,
+        sizes,
+        stock: totalStock,
+        featured: Boolean(req.body.featured),
+        status: totalStock <= 0 ? "Out of stock" : req.body.status || "Active",
+      },
+      { new: true }
+    );
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.json(product);
+  } catch (error) {
+    console.error("Update product error:", error.message);
+    res.status(500).json({
+      message: "Failed to update product",
+      error: error.message,
+    });
+  }
 });
 
 router.delete("/:id", async (req, res) => {
-  await Product.findByIdAndDelete(req.params.id);
-  res.json({ message: "Deleted" });
+  try {
+    await Product.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted" });
+  } catch (error) {
+    console.error("Delete product error:", error.message);
+    res.status(500).json({ message: "Failed to delete product" });
+  }
 });
 
 export default router;
