@@ -97,7 +97,9 @@ export default function FeaturedPage() {
     });
   }, [filteredProducts, sort]);
 
-  const handleAddToCart = (product) => {
+  const handleAddToCart = async (product) => {
+  const productId = product._id || product.id;
+
   const selectedStock =
     product.sizes?.find((s) => s.size === product.size)?.stock || 0;
 
@@ -115,28 +117,61 @@ export default function FeaturedPage() {
 
   const existingItemIndex = existingCart.findIndex(
     (item) =>
-      String(item._id || item.id) === String(product._id || product.id) &&
+      String(item._id || item.id) === String(productId) &&
       item.size === product.size
   );
 
   if (existingItemIndex !== -1) {
     existingCart[existingItemIndex].quantity += product.quantity;
   } else {
-    existingCart.push(product);
+    existingCart.push({
+      ...product,
+      id: productId,
+      _id: productId,
+    });
   }
 
   localStorage.setItem("cart", JSON.stringify(existingCart));
 
-  window.dispatchEvent(new Event("cartUpdated"));
-  toast.success("Added to cart");
-};
-    localStorage.setItem("adminProducts", JSON.stringify(updatedProducts));
+  const updatedSizes = product.sizes.map((s) => {
+    if (s.size !== product.size) return s;
+
+    return {
+      ...s,
+      stock: Math.max(0, Number(s.stock) - Number(product.quantity)),
+    };
+  });
+
+  const totalStock = updatedSizes.reduce(
+    (sum, s) => sum + Number(s.stock || 0),
+    0
+  );
+
+  const updatedProduct = {
+    ...product,
+    sizes: updatedSizes,
+    stock: totalStock,
+    status: totalStock <= 0 ? "Out of stock" : "Active",
+  };
+
+  try {
+    await API.put(`/products/${productId}`, updatedProduct);
+
+    setAdminProducts((prev) =>
+      prev.map((p) =>
+        String(p._id || p.id) === String(productId) ? updatedProduct : p
+      )
+    );
 
     window.dispatchEvent(new Event("cartUpdated"));
     window.dispatchEvent(new Event("productsUpdated"));
 
     toast.success("Added to cart");
-  };
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to update product stock");
+  }
+};
 
   return (
     <div className="min-h-screen bg-white pt-28">
