@@ -81,16 +81,18 @@ const [product, setProduct] = useState(null);
     }
 
     const cart = JSON.parse(localStorage.getItem("cart")) || [];
+const cartItem = {
+  ...product,
+  id: product._id || product.id,
+  size: selectedSize,
+  quantity: qty,
+};
 
-    const cartItem = {
-      ...product,
-      size: selectedSize,
-      quantity: qty,
-    };
-
-    const existingIndex = cart.findIndex(
-      (item) => item.id === product.id && item.size === selectedSize
-    );
+const existingIndex = cart.findIndex(
+  (item) =>
+    String(item._id || item.id) === String(product._id || product.id) &&
+    item.size === selectedSize
+);
 
     if (existingIndex !== -1) {
       cart[existingIndex].quantity += qty;
