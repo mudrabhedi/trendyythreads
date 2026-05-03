@@ -8,7 +8,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
+import { API } from "../api/api";
 import { useNavigate } from "react-router-dom";
 
 const Logo = () => (
@@ -97,10 +97,10 @@ const Navbar = () => {
   useEffect(() => {
     const getProfile = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/auth/profile", {
-          withCredentials: true,
-        });
-        setUser(res.data);
+const res = await API.get("/auth/profile", {
+  withCredentials: true,
+});
+setUser(res.data);
 localStorage.setItem("user", JSON.stringify(res.data));
       } catch {
         localStorage.removeItem("user");
@@ -115,12 +115,15 @@ localStorage.removeItem("loggedInUser");
   // ✅ Logout
   const logout = async () => {
     try {
-      await axios.post(
-        "http://localhost:5000/api/auth/logout",
-        {},
-        { withCredentials: true }
-      );
-      setUser(null);
+await API.post(
+  "/auth/logout",
+  {},
+  { withCredentials: true }
+);
+setUser(null);
+localStorage.removeItem("user");
+localStorage.removeItem("token");
+localStorage.removeItem("loggedInUser");
     } catch {
       console.error("Logout failed");
     }

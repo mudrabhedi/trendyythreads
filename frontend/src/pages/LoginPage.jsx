@@ -15,33 +15,33 @@ const LoginPage = () => {
     const emailNormalized = email.trim().toLowerCase();
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email: emailNormalized, password }),
-      });
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email: emailNormalized, password }),
+  });
 
-      let data = {};
-      const text = await res.text();
+  let data = {};
+  const text = await res.text();
 
-      try {
-        data = text ? JSON.parse(text) : {};
-      } catch {
-        data = { message: text || "Unknown server response" };
-      }
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { message: text || "Unknown server response" };
+  }
 
-      if (!res.ok) {
-        setError(data.message || `Login failed (${res.status})`);
-        return;
-      }
+  if (!res.ok) {
+    setError(data.message || `Login failed (${res.status})`);
+    return;
+  }
 
-      window.location.assign("/");
-    } catch {
-      setError("Unable to connect to server. Is your backend running?");
-    } finally {
-      setLoading(false);
-    }
+  window.location.assign("/");
+} catch {
+  setError("Unable to connect to server. Please try again.");
+} finally {
+  setLoading(false);
+}
   };
 
   return (

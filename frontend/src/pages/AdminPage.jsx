@@ -300,9 +300,7 @@ const loadOrders = async () => {
     <div className="min-h-screen bg-white pt-28 px-6">
       <div className="max-w-[1500px] mx-auto">
         <div className="border-b border-[#E5E5E5] pb-8">
-          <p className="text-sm tracking-[0.25em] uppercase text-[#8A5A5D]">
-            Amydus Admin
-          </p>
+          
 
           <div className="mt-3 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div>
