@@ -112,7 +112,7 @@ export default function CheckoutPage() {
 });
 
       const options = {
-        key: "rzp_test_SkAzOkzr0VpjvT",
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,,
         amount: order.amount,
         currency: order.currency,
         name: "TrendyThreads",
