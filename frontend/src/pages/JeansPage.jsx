@@ -89,7 +89,9 @@ useEffect(() => {
     });
   }, [filteredProducts, sort]);
 
-  const handleAddToCart = (product) => {
+  const handleAddToCart = async (product) => {
+  const productId = product._id || product.id;
+
   const selectedStock =
     product.sizes?.find((s) => s.size === product.size)?.stock || 0;
 
@@ -107,82 +109,61 @@ useEffect(() => {
 
   const existingItemIndex = existingCart.findIndex(
     (item) =>
-      String(item._id || item.id) === String(product._id || product.id) &&
+      String(item._id || item.id) === String(productId) &&
       item.size === product.size
   );
 
   if (existingItemIndex !== -1) {
     existingCart[existingItemIndex].quantity += product.quantity;
   } else {
-    existingCart.push(product);
+    existingCart.push({
+      ...product,
+      id: productId,
+      _id: productId,
+    });
   }
 
   localStorage.setItem("cart", JSON.stringify(existingCart));
 
-  window.dispatchEvent(new Event("cartUpdated"));
-  toast.success("Added to cart");
-};
+  const updatedSizes = product.sizes.map((s) => {
+    if (s.size !== product.size) return s;
 
-    const selectedStock =
-      latestProduct?.sizes?.find((s) => s.size === product.size)?.stock || 0;
+    return {
+      ...s,
+      stock: Math.max(0, Number(s.stock) - Number(product.quantity)),
+    };
+  });
 
-    if (selectedStock <= 0) {
-      toast.error("Selected size is out of stock");
-      return;
-    }
+  const totalStock = updatedSizes.reduce(
+    (sum, s) => sum + Number(s.stock || 0),
+    0
+  );
 
-    if (product.quantity > selectedStock) {
-      toast.error(`Only ${selectedStock} item(s) available`);
-      return;
-    }
+  const updatedProduct = {
+    ...product,
+    sizes: updatedSizes,
+    stock: totalStock,
+    status: totalStock <= 0 ? "Out of stock" : "Active",
+  };
 
-    const existingCart = JSON.parse(localStorage.getItem("cart")) || [];
+  try {
+    await API.put(`/products/${productId}`, updatedProduct);
 
-    const existingItemIndex = existingCart.findIndex(
-      (item) => item.id === product.id && item.size === product.size
+    setAdminProducts((prev) =>
+      prev.map((p) =>
+        String(p._id || p.id) === String(productId) ? updatedProduct : p
+      )
     );
-
-    if (existingItemIndex !== -1) {
-      existingCart[existingItemIndex].quantity += product.quantity;
-    } else {
-      existingCart.push(product);
-    }
-
-    localStorage.setItem("cart", JSON.stringify(existingCart));
-
-    const updatedProducts = savedProducts.map((p) => {
-      if (String(p.id) !== String(product.id)) return p;
-
-      const updatedSizes = p.sizes.map((s) => {
-        if (s.size !== product.size) return s;
-
-        return {
-          ...s,
-          stock: Math.max(0, Number(s.stock) - Number(product.quantity)),
-        };
-      });
-
-      const totalStock = updatedSizes.reduce(
-        (sum, s) => sum + Number(s.stock || 0),
-        0
-      );
-
-      return {
-        ...p,
-        sizes: updatedSizes,
-        stock: totalStock,
-        status: totalStock <= 0 ? "Out of stock" : "Active",
-      };
-    });
-
-    localStorage.setItem("adminProducts", JSON.stringify(updatedProducts));
 
     window.dispatchEvent(new Event("cartUpdated"));
     window.dispatchEvent(new Event("productsUpdated"));
 
     toast.success("Added to cart");
-  };
-
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to update product stock");
+  }
+};
   return (
     <div className="min-h-screen bg-white pt-28">
       <div className="max-w-[1500px] mx-auto px-8">
