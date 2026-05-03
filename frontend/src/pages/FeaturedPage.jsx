@@ -98,64 +98,38 @@ export default function FeaturedPage() {
   }, [filteredProducts, sort]);
 
   const handleAddToCart = (product) => {
-    const savedProducts = JSON.parse(localStorage.getItem("adminProducts")) || [];
+  const selectedStock =
+    product.sizes?.find((s) => s.size === product.size)?.stock || 0;
 
-    const latestProduct = savedProducts.find(
-      (p) => String(p.id) === String(product.id)
-    );
+  if (selectedStock <= 0) {
+    toast.error("Selected size is out of stock");
+    return;
+  }
 
-    const selectedStock =
-      latestProduct?.sizes?.find((s) => s.size === product.size)?.stock || 0;
+  if (product.quantity > selectedStock) {
+    toast.error(`Only ${selectedStock} item(s) available`);
+    return;
+  }
 
-    if (selectedStock <= 0) {
-      toast.error("Selected size is out of stock");
-      return;
-    }
+  const existingCart = JSON.parse(localStorage.getItem("cart")) || [];
 
-    if (product.quantity > selectedStock) {
-      toast.error(`Only ${selectedStock} item(s) available`);
-      return;
-    }
+  const existingItemIndex = existingCart.findIndex(
+    (item) =>
+      String(item._id || item.id) === String(product._id || product.id) &&
+      item.size === product.size
+  );
 
-    const existingCart = JSON.parse(localStorage.getItem("cart")) || [];
+  if (existingItemIndex !== -1) {
+    existingCart[existingItemIndex].quantity += product.quantity;
+  } else {
+    existingCart.push(product);
+  }
 
-    const existingItemIndex = existingCart.findIndex(
-      (item) => item.id === product.id && item.size === product.size
-    );
+  localStorage.setItem("cart", JSON.stringify(existingCart));
 
-    if (existingItemIndex !== -1) {
-      existingCart[existingItemIndex].quantity += product.quantity;
-    } else {
-      existingCart.push(product);
-    }
-
-    localStorage.setItem("cart", JSON.stringify(existingCart));
-
-    const updatedProducts = savedProducts.map((p) => {
-      if (String(p.id) !== String(product.id)) return p;
-
-      const updatedSizes = p.sizes.map((s) => {
-        if (s.size !== product.size) return s;
-
-        return {
-          ...s,
-          stock: Math.max(0, Number(s.stock) - Number(product.quantity)),
-        };
-      });
-
-      const totalStock = updatedSizes.reduce(
-        (sum, s) => sum + Number(s.stock || 0),
-        0
-      );
-
-      return {
-        ...p,
-        sizes: updatedSizes,
-        stock: totalStock,
-        status: totalStock <= 0 ? "Out of stock" : "Active",
-      };
-    });
-
+  window.dispatchEvent(new Event("cartUpdated"));
+  toast.success("Added to cart");
+};
     localStorage.setItem("adminProducts", JSON.stringify(updatedProducts));
 
     window.dispatchEvent(new Event("cartUpdated"));
